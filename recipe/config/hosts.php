@@ -20,8 +20,8 @@ task('config:hosts', function () {
         }
 
         $rows[] = [
+            $host->getAlias(),
             $host->getHostname(),
-            $host->getRealHostname(),
             $host->get('stage', ''),
             implode(', ', $host->get('roles', [])),
             $host->get('deploy_path', ''),

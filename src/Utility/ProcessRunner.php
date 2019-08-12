@@ -26,7 +26,7 @@ class ProcessRunner
     /**
      * Runs a command, consider deployer global configs (timeout,...)
      *
-     * @param string $hostname
+     * @param string $hostAlias
      * @param string $command
      * @param array $config
      *
@@ -34,7 +34,7 @@ class ProcessRunner
      *
      * @throws ProcessFailedException When the process does not return a 0 exit code.
      */
-    public function run($hostname, string $command, array $config = [])
+    public function run($hostAlias, string $command, array $config = [])
     {
         $defaults = [
             'timeout' => Deployer::getDefault('default_timeout', 300),
@@ -42,13 +42,13 @@ class ProcessRunner
         ];
         $config = array_merge($defaults, $config);
 
-        $this->pop->command($hostname, $command);
+        $this->pop->command($hostAlias, $command);
 
         $process = new Process($command);
         $process
             ->setTimeout($config['timeout'])
             ->setTty($config['tty'])
-            ->mustRun($this->pop->callback($hostname));
+            ->mustRun($this->pop->callback($hostAlias));
 
         return $process->getOutput();
     }

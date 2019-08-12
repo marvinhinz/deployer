@@ -25,7 +25,7 @@ class HostTest extends TestCase
             ->sshOptions(['BatchMode' => 'yes'])
             ->addSshOption('Compression', 'yes');
 
-        self::assertEquals('host', $host->getHostname());
+        self::assertEquals('host', $host->getAlias());
         self::assertEquals('user', $host->getUser());
         self::assertEquals(22, $host->getPort());
         self::assertEquals('~/.ssh/config', $host->getConfigFile());
@@ -70,7 +70,7 @@ class HostTest extends TestCase
     public function testHostAlias()
     {
         $host = new Host('host/alias');
-        self::assertEquals('host/alias', $host->getHostname());
+        self::assertEquals('host/alias', $host->getAlias());
         self::assertEquals('host', "$host");
     }
 

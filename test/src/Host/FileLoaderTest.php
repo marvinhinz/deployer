@@ -38,7 +38,7 @@ class FileLoaderTest extends TestCase
 
         // bar configured properly
         $bar = $this->getHost('bar');
-        self::assertEquals('bar', $bar->getHostname());
+        self::assertEquals('bar', $bar->getAlias());
         self::assertEquals('user@bar.com', "$bar");
         self::assertEquals('user', $bar->getUser());
         self::assertEquals(22, $bar->getPort());
@@ -53,9 +53,9 @@ class FileLoaderTest extends TestCase
         );
 
         $db1 = $this->getHost('db1.deployer.org');
-        self::assertEquals('db1.deployer.org', $db1->getHostname());
+        self::assertEquals('db1.deployer.org', $db1->getAlias());
         $db2 = $this->getHost('db2.deployer.org');
-        self::assertEquals('db2.deployer.org', $db2->getHostname());
+        self::assertEquals('db2.deployer.org', $db2->getAlias());
     }
 
     /**
@@ -65,7 +65,7 @@ class FileLoaderTest extends TestCase
     private function getHost($name)
     {
         foreach ($this->hosts as $host) {
-            if ($host->getHostname() === $name) {
+            if ($host->getAlias() === $name) {
                 return $host;
             }
         }

@@ -216,7 +216,7 @@ class Task
         }
 
         foreach ($hosts as $host) {
-            $onHost = empty($this->on['hosts']) || in_array($host->getHostname(), $this->on['hosts'], true);
+            $onHost = empty($this->on['hosts']) || in_array($host->getAlias(), $this->on['hosts'], true);
 
             $onRole = empty($this->on['roles']);
             foreach ((array) $host->get('roles', []) as $role) {

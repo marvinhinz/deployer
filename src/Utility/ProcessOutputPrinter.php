@@ -10,17 +10,11 @@ namespace Deployer\Utility;
 use Deployer\Logger\Logger;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
+use function Deployer\hostTag;
 
 class ProcessOutputPrinter
 {
-    /**
-     * @var OutputInterface
-     */
     private $output;
-
-    /**
-     * @var Logger
-     */
     private $logger;
 
     public function __construct(OutputInterface $output, Logger $logger)
@@ -32,32 +26,40 @@ class ProcessOutputPrinter
     /**
      * Returns a callable for use with the symfony Process->run($callable) method.
      *
+     * @param string $hostAlias
      * @return callable A function expecting a int $type (e.g. Process::OUT or Process::ERR) and string $buffer parameters.
      */
-    public function callback(string $hostname)
+    public function callback(string $hostAlias)
     {
-        return function ($type, $buffer) use ($hostname) {
-            foreach (explode("\n", rtrim($buffer)) as $line) {
-                $this->writeln($type, $hostname, $line);
-            }
+        return function ($type, $buffer) use ($hostAlias) {
+            $this->printBuffer($type, $hostAlias, $buffer);
         };
     }
 
-    public function command(string $hostname, string $command)
+    /**
+     * @param string $type Process::OUT or Process::ERR
+     * @param string $hostname
+     * @param string $buffer
+     */
+    public function printBuffer($type, $hostname, $buffer)
     {
-        $this->logger->log("[$hostname] > $command");
-
-        if ($this->output->isVeryVerbose()) {
-            $this->output->writeln("[$hostname] <fg=cyan>></fg=cyan> $command");
+        foreach (explode("\n", rtrim($buffer)) as $line) {
+            $this->writeln($type, $hostname, $line);
         }
     }
 
+    public function command(string $hostAlias, string $command)
+    {
+        $this->logger->log("[$hostAlias] run $command");
+        $this->output->writeln(hostTag($hostAlias) . "<fg=cyan>run</> $command");
+    }
+
     /**
-     * @param int $type Process::OUT or Process::ERR
-     * @param string $hostname for debugging
-     * @param string $line to print
+     * @param string $type Process::OUT or Process::ERR
+     * @param string $hostAlias
+     * @param string $line
      */
-    public function writeln($type, $hostname, $line)
+    public function writeln($type, $hostAlias, $line)
     {
         $line = $this->filterOutput($line);
 
@@ -67,24 +69,19 @@ class ProcessOutputPrinter
         }
 
         if ($type === Process::ERR) {
-            $this->logger->log("[$hostname] < [error] $line");
+            $this->logger->log("[$hostAlias] [error] $line");
         } else {
-            $this->logger->log("[$hostname] < $line");
+            $this->logger->log("[$hostAlias] $line");
         }
 
-        if ($this->output->isDecorated()) {
-            if ($type === Process::ERR) {
-                $line = "[$hostname] \033[0;31m<\e[0m $line";
-            } else {
-                $line = "[$hostname] \033[0;90m< $line\033[0m";
-            }
+        $prefix = hostTag($hostAlias);
+        if ($type === Process::ERR) {
+            $line = "$prefix<fg=red>err</> $line";
         } else {
-            $line = "[$hostname] < $line";
+            $line = "$prefix$line";
         }
 
-        if ($this->output->isDebug()) {
-            $this->output->writeln($line, OutputInterface::OUTPUT_RAW);
-        }
+        $this->output->writeln($line);
     }
 
     /**

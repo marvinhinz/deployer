@@ -16,8 +16,8 @@ class Host
 {
     use ConfigurationAccessor;
 
+    private $alias;
     private $hostname;
-    private $realHostname;
     private $user;
     private $port;
     private $configFile;
@@ -27,13 +27,10 @@ class Host
     private $sshArguments;
     private $shellCommand = 'bash -s';
 
-    /**
-     * @param string $hostname
-     */
     public function __construct(string $hostname)
     {
-        $this->hostname = $hostname;
-        $this->setRealHostname($hostname);
+        $this->alias = $hostname;
+        $this->setHostname($hostname);
         $this->config = new Configuration();
         $this->sshArguments = new Arguments();
     }
@@ -65,37 +62,37 @@ class Host
     public function __toString()
     {
         $user = empty($this->user) ? '' : "{$this->user}@";
-        return "$user{$this->realHostname}";
+        return "$user{$this->hostname}";
     }
 
     /**
      * @return string
+     */
+    public function getAlias()
+    {
+        return $this->config->parse($this->alias);
+    }
+
+    /**
+     * @return mixed
      */
     public function getHostname()
     {
         return $this->config->parse($this->hostname);
     }
 
-    /**
-     * @return mixed
-     */
-    public function getRealHostname()
-    {
-        return $this->config->parse($this->realHostname);
-    }
-
     public function hostname(string $hostname): self
     {
-        $this->setRealHostname($hostname);
+        $this->setHostname($hostname);
         return $this;
     }
 
     /**
      * @param mixed $hostname
      */
-    private function setRealHostname(string $hostname)
+    private function setHostname(string $hostname)
     {
-        $this->realHostname = preg_replace('/\/.+$/', '', $hostname);
+        $this->hostname = preg_replace('/\/.+$/', '', $hostname);
     }
 
     /**
@@ -220,12 +217,6 @@ class Host
     public function shellCommand(string $shellCommand): self
     {
         $this->shellCommand = $shellCommand;
-        return $this;
-    }
-
-    public function stage(string $stage): self
-    {
-        $this->config->set('stage', $stage);
         return $this;
     }
 

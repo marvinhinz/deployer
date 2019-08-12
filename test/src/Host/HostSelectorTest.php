@@ -7,7 +7,6 @@
 
 namespace Deployer\Host;
 
-use Deployer\Exception\Exception;
 use PHPUnit\Framework\TestCase;
 
 class HostSelectorTest extends TestCase
@@ -25,7 +24,7 @@ class HostSelectorTest extends TestCase
         $this->expectException(\Exception::class);
 
         $hostSelector = new HostSelector(new HostCollection());
-        $hostSelector->getHosts('ThisHostDoNotExists');
+        $hostSelector->getAll('ThisHostDoNotExists');
     }
 
     /**
@@ -36,7 +35,7 @@ class HostSelectorTest extends TestCase
         $hostCollection = new HostCollection();
         $hostCollection->set($hostname, $host);
         $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getHosts(null);
+        $hosts = $hostSelector->getAll(null);
 
         $this->assertSame($hostname, key($hosts));
     }
@@ -55,7 +54,7 @@ class HostSelectorTest extends TestCase
     public function testReturnArrayWithDefaultLocalHostForEmptyCollection()
     {
         $hostSelector = new HostSelector(new HostCollection());
-        $hosts = $hostSelector->getHosts(null);
+        $hosts = $hostSelector->getAll(null);
 
         $this->assertSame('localhost', key($hosts));
     }
@@ -69,7 +68,7 @@ class HostSelectorTest extends TestCase
         }
 
         $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getHosts(null);
+        $hosts = $hostSelector->getAll(null);
 
         $this->assertSame(count($hosts), 100);
     }
@@ -82,7 +81,7 @@ class HostSelectorTest extends TestCase
         $hostCollection = new HostCollection();
         $hostCollection->set('app', $host);
         $hostSelector = new HostSelector($hostCollection);
-        $hostSelector->getHosts('stage');
+        $hostSelector->getAll('stage');
     }
 
     public function testShouldReturnHostIfItHasStage()
@@ -92,7 +91,7 @@ class HostSelectorTest extends TestCase
         $hostCollection = new HostCollection();
         $hostCollection->set('apps', $host);
         $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getHosts('stage');
+        $hosts = $hostSelector->getAll('stage');
 
         $this->assertSame(1, count($hosts));
     }
@@ -103,7 +102,7 @@ class HostSelectorTest extends TestCase
         $hostCollection = new HostCollection();
         $hostCollection->set('apps', $host);
         $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getHosts('apps');
+        $hosts = $hostSelector->getAll('apps');
 
         $this->assertSame(1, count($hosts));
     }
@@ -118,9 +117,9 @@ class HostSelectorTest extends TestCase
         $hosts = $hostSelector->getByHostnames('server, app, db');
 
         $this->assertSame(count($hosts), 3);
-        $this->assertSame('server', $hosts[0]->getHostname());
-        $this->assertSame('app', $hosts[1]->getHostname());
-        $this->assertSame('db', $hosts[2]->getHostname());
+        $this->assertSame('server', $hosts[0]->getAlias());
+        $this->assertSame('app', $hosts[1]->getAlias());
+        $this->assertSame('db', $hosts[2]->getAlias());
     }
 
     public function testReturnEmptyArrayOfHostsUsingGetByRolesIfNoRolesDefined()

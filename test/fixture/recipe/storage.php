@@ -17,7 +17,7 @@ localhost('[a:f]')
     });
 
 set('hostname', function () {
-    return Context::get()->getHost()->getHostname();
+    return Context::get()->getHost()->getAlias();
 });
 
 // Tasks

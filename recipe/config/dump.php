@@ -39,7 +39,7 @@ task('config:dump', function () {
     }
 
     $io = new SymfonyStyle(input(), output());
-    $io->section("[{$host->getHostname()}]");
+    $io->section("[{$host->getAlias()}]");
 
     $table = new Table(output());
     $table

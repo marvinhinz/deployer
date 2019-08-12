@@ -35,6 +35,10 @@ set('hostname', function () {
     return Context::get()->getHost()->getHostname();
 });
 
+set('host_alias', function () {
+    return Context::get()->getHost()->getAlias();
+});
+
 set('user', function () {
     try {
         return runLocally('git config --get user.name');
@@ -47,13 +51,11 @@ set('user', function () {
     }
 });
 
-set('target', function () {
-    return input()->getArgument('stage') ?: get('hostname');
-});
-
 /**
  * Configuration
  */
+
+set('default_roles', null);
 
 set('keep_releases', 5);
 

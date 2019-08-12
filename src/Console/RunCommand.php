@@ -9,27 +9,19 @@ namespace Deployer\Console;
 
 use Deployer\Deployer;
 use Deployer\Exception\Exception;
-use function Deployer\run;
 use Deployer\Task\Context;
 use Deployer\Task\Task;
-use function Deployer\write;
-use function Deployer\writeln;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface as Input;
 use Symfony\Component\Console\Input\InputOption as Option;
 use Symfony\Component\Console\Output\OutputInterface as Output;
+use function Deployer\run;
 
 class RunCommand extends Command
 {
-    /**
-     * @var Deployer
-     */
     private $deployer;
 
-    /**
-     * @param Deployer $deployer
-     */
     public function __construct(Deployer $deployer)
     {
         parent::__construct('run');
@@ -37,9 +29,6 @@ class RunCommand extends Command
         $this->deployer = $deployer;
     }
 
-    /**
-     * Configures the command
-     */
     protected function configure()
     {
         $this->addArgument(
@@ -48,16 +37,10 @@ class RunCommand extends Command
             'Command to run'
         );
         $this->addOption(
-            'log',
+            'hosts',
             null,
             Option::VALUE_REQUIRED,
-            'Log to file'
-        );
-        $this->addOption(
-            'stage',
-            null,
-            Option::VALUE_REQUIRED,
-            'Stage to deploy'
+            'Host to deploy, comma separated, supports ranges [:]'
         );
         $this->addOption(
             'roles',
@@ -65,47 +48,27 @@ class RunCommand extends Command
             Option::VALUE_REQUIRED,
             'Roles to deploy'
         );
-        $this->addOption(
-            'hosts',
-            null,
-            Option::VALUE_REQUIRED,
-            'Host to deploy, comma separated, supports ranges [:]'
-        );
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function execute(Input $input, Output $output)
     {
         $command = $input->getArgument('command-to-run');
-        $stage = $input->getOption('stage');
-        $roles = $input->getOption('roles');
-        $hosts = $input->getOption('hosts');
+        $byHosts = $input->getOption('hosts');
+        $byRoles = $input->getOption('roles');
 
-        if (!empty($input->getOption('log'))) {
-            $this->deployer->config['log_file'] = $input->getOption('log');
+        foreach ($this->deployer->console->getUserDefinition()->getOptions() as $option) {
+            if (!empty($input->getOption($option->getName()))) {
+                $this->deployer->config[$option->getName()] = $input->getOption($option->getName());
+            }
         }
 
-        if (!empty($hosts)) {
-            $hosts = $this->deployer->hostSelector->getByHostnames($hosts);
-        } elseif (!empty($roles)) {
-            $hosts = $this->deployer->hostSelector->getByRoles($roles);
-        } else {
-            $hosts = $this->deployer->hostSelector->getHosts($stage);
-        }
-
+        $hosts = $this->deployer->hostSelector->select($byHosts, $byRoles);
         if (empty($hosts)) {
             throw new Exception('No host selected');
         }
 
         $task = new Task($command, function () use ($command, $hosts) {
-            $output = run($command);
-            if (count($hosts) > 1) {
-                writeln("[{{hostname}}] > $output");
-            } else {
-                write($output);
-            }
+            run($command);
         });
 
         foreach ($hosts as $host) {

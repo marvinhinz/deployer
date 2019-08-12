@@ -7,12 +7,12 @@
 
 namespace Deployer;
 
+use Deployer\Configuration\UserConfiguration;
 use Deployer\Exception\RuntimeException;
 use Deployer\Host\FileLoader;
 use Deployer\Host\Host;
 use Deployer\Host\Localhost;
 use Deployer\Host\Range;
-use function Deployer\Support\array_to_string;
 use Deployer\Support\Proxy;
 use Deployer\Task\Context;
 use Deployer\Task\GroupTask;
@@ -24,6 +24,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
+use function Deployer\Support\array_to_string;
 
 // There are two types of functions: Deployer dependent and Context dependent.
 // Deployer dependent function uses in definition stage of recipe and may require Deployer::get() method.
@@ -41,7 +42,6 @@ function host(...$hostnames)
     $deployer = Deployer::get();
     $hostnames = Range::expand($hostnames);
 
-    // Return hosts if has
     if ($deployer->hosts->has($hostnames[0])) {
         if (count($hostnames) === 1) {
             return $deployer->hosts->get($hostnames[0]);
@@ -50,7 +50,6 @@ function host(...$hostnames)
         }
     }
 
-    // Add otherwise
     if (count($hostnames) === 1) {
         $host = new Host($hostnames[0]);
         $deployer->hosts->set($hostnames[0], $host);
@@ -76,12 +75,12 @@ function localhost(...$hostnames)
 
     if (count($hostnames) <= 1) {
         $host = count($hostnames) === 1 ? new Localhost($hostnames[0]) : new Localhost();
-        $deployer->hosts->set($host->getHostname(), $host);
+        $deployer->hosts->set($host->getAlias(), $host);
         return $host;
     } else {
         $hosts = array_map(function ($hostname) use ($deployer) {
             $host = new Localhost($hostname);
-            $deployer->hosts->set($host->getHostname(), $host);
+            $deployer->hosts->set($host->getAlias(), $host);
             return $host;
         }, $hostnames);
         return new Proxy($hosts);
@@ -102,7 +101,7 @@ function inventory($file)
 
     $hosts = $fileLoader->getHosts();
     foreach ($hosts as $host) {
-        $deployer->hosts->set($host->getHostname(), $host);
+        $deployer->hosts->set($host->getAlias(), $host);
     }
 
     return new Proxy($hosts);
@@ -250,7 +249,7 @@ function cd($path)
     try {
         set('working_path', parse($path));
     } catch (RuntimeException $e) {
-        throw new \Exception('Unable to change directory into "'. $path .'"', 0, $e);
+        throw new \Exception('Unable to change directory into "' . $path . '"', 0, $e);
     }
 }
 
@@ -281,7 +280,6 @@ function within($path, $callback)
 function run($command, $options = [])
 {
     $host = Context::get()->getHost();
-    $hostname = $host->getHostname();
 
     $command = parse($command);
     $workingPath = get('working_path', '');
@@ -298,7 +296,7 @@ function run($command, $options = [])
 
     if ($host instanceof Localhost) {
         $process = Deployer::get()->processRunner;
-        $output = $process->run($hostname, $command, $options);
+        $output = $process->run($host->getAlias(), $command, $options);
     } else {
         $client = Deployer::get()->sshClient;
         $output = $client->run($host, $command, $options);
@@ -317,7 +315,6 @@ function run($command, $options = [])
 function runLocally($command, $options = [])
 {
     $process = Deployer::get()->processRunner;
-    $hostname = 'localhost';
     $command = parse($command);
 
     $env = get('env', []) + ($options['env'] ?? []);
@@ -326,7 +323,7 @@ function runLocally($command, $options = [])
         $command = "export $env; $command";
     }
 
-    $output = $process->run($hostname, $command, $options);
+    $output = $process->run('localhost', $command, $options);
 
     return rtrim($output);
 }
@@ -431,7 +428,7 @@ function upload($source, $destination, array $config = [])
     $destination = parse($destination);
 
     if ($host instanceof Localhost) {
-        $rsync->call($host->getHostname(), $source, $destination, $config);
+        $rsync->call($host->getAlias(), $source, $destination, $config);
     } else {
         if (!isset($config['options']) || !is_array($config['options'])) {
             $config['options'] = [];
@@ -443,10 +440,10 @@ function upload($source, $destination, array $config = [])
         }
 
         if ($host->has("become")) {
-            $config['options'][]  = "--rsync-path='sudo -H -u " . $host->get('become') . " rsync'";
+            $config['options'][] = "--rsync-path='sudo -H -u " . $host->get('become') . " rsync'";
         }
 
-        $rsync->call($host->getHostname(), $source, "$host:$destination", $config);
+        $rsync->call($host->getAlias(), $source, "$host:$destination", $config);
     }
 }
 
@@ -465,7 +462,7 @@ function download($source, $destination, array $config = [])
     $destination = parse($destination);
 
     if ($host instanceof Localhost) {
-        $rsync->call($host->getHostname(), $source, $destination, $config);
+        $rsync->call($host->getAlias(), $source, $destination, $config);
     } else {
         if (!isset($config['options']) || !is_array($config['options'])) {
             $config['options'] = [];
@@ -477,11 +474,36 @@ function download($source, $destination, array $config = [])
         }
 
         if ($host->has("become")) {
-            $config['options'][]  = "--rsync-path='sudo -H -u " . $host->get('become') . " rsync'";
+            $config['options'][] = "--rsync-path='sudo -H -u " . $host->get('become') . " rsync'";
         }
 
-        $rsync->call($host->getHostname(), "$host:$source", $destination, $config);
+        $rsync->call($host->getAlias(), "$host:$source", $destination, $config);
     }
+}
+
+/**
+ * @param string $hostAlias
+ * @return string
+ */
+function hostTag($hostAlias)
+{
+    static $map = null;
+    if ($map === null) {
+        $map = UserConfiguration::load(UserConfiguration::HOSTNAME_COLORS, []);
+    }
+    $tag = $map[$hostAlias] ?? 'fg=default';
+    return "[<{$tag}>$hostAlias</>] ";
+}
+
+/**
+ * Writes an info message.
+ * @param string $message
+ * @throws Exception\Exception
+ */
+function writeInfo($message)
+{
+    $host = Context::get()->getHost();
+    output()->writeln(hostTag($host->getAlias()) . "<info>info</info> " . parse($message));
 }
 
 /**

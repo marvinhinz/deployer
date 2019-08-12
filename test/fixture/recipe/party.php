@@ -73,7 +73,7 @@ task('test_invoke_group:subtask2', function () {
 
 localhost('test_on[01:05]')
     ->set('hostname', function () {
-        return Context::get()->getHost()->getHostname();
+        return Context::get()->getHost()->getAlias();
     })
     ->set('deploy_path', __DIR__ . '/tmp/{{hostname}}')
     ->set('roles', ['test_on_roles']);
@@ -81,6 +81,6 @@ localhost('test_on[01:05]')
 
 task('test_on', function () {
     on(roles('test_on_roles'), function (Host $host) {
-        writeln('<' . ($host->getHostname() === get('hostname') ? 'yes:' : 'no:') . '{{hostname}}' . '>');
+        writeln('<' . ($host->getAlias() === get('hostname') ? 'yes:' : 'no:') . '{{hostname}}' . '>');
     });
 })->local();

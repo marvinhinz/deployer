@@ -22,12 +22,12 @@ task('config:current', function () {
 
         try {
             $rows[] = [
-                $host->getHostname(),
+                $host->getAlias(),
                 basename($host->get('current_path')),
             ];
         } catch (\Throwable $e) {
             $rows[] = [
-                $host->getHostname(),
+                $host->getAlias(),
                 'unknown',
             ];
         }

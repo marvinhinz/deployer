@@ -1,3 +1,8 @@
+# Upgrade from 6.x to 7.x
+
+1. Change `hostname` to `alias`.
+2. Change `real_hostname` to `hostname`.
+
 # Upgrade from 5.x to 6.x
 
 1. Changed branch option priority

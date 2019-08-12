@@ -7,61 +7,74 @@
 
 namespace Deployer\Executor;
 
+use Deployer\Collection\Collection;
+use Deployer\Configuration\UserConfiguration;
 use Deployer\Console\Application;
-use Deployer\Console\Input\Argument;
-use Deployer\Console\Input\Option;
 use Deployer\Console\Output\Informer;
-use Deployer\Console\Output\VerbosityString;
 use Deployer\Exception\Exception;
 use Deployer\Exception\GracefulShutdownException;
 use Deployer\Host\Host;
 use Deployer\Host\Localhost;
 use Deployer\Host\Storage;
+use Deployer\Ssh\Client;
 use Deployer\Task\Context;
 use Deployer\Task\Task;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
+use function Deployer\hostTag;
+
+const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+function spinner()
+{
+    return FRAMES[(int)(microtime(true) * 10) % count(FRAMES)];
+}
 
 class ParallelExecutor implements ExecutorInterface
 {
-    /**
-     * @var InputInterface
-     */
     private $input;
-
-    /**
-     * @var OutputInterface
-     */
     private $output;
-
-    /**
-     * @var Informer
-     */
     private $informer;
-
-    /**
-     * @var Application
-     */
     private $console;
+    private $client;
+    private $config;
 
     public function __construct(
         InputInterface $input,
         OutputInterface $output,
         Informer $informer,
-        Application $console
-    ) {
+        Application $console,
+        Client $client,
+        Collection $config
+    )
+    {
         $this->input = $input;
         $this->output = $output;
         $this->informer = $informer;
         $this->console = $console;
+        $this->client = $client;
+        $this->config = $config;
     }
 
     /**
-     * {@inheritdoc}
+     * @param Task[] $tasks
+     * @param Host[] $hosts
+     * @throws Exception
+     * @throws GracefulShutdownException
      */
     public function run(array $tasks, array $hosts)
     {
+        $this->setColors($hosts);
+
+        // Connect to each host sequentially, to prevent getting locked.
+        foreach ($hosts as $host) {
+            if (!($host instanceof Localhost)) {
+                $this->output->write(spinner() . "\r");
+                $this->client->connect($host);
+            }
+        }
+
         $localhost = new Localhost();
         $limit = (int)$this->input->getOption('limit') ?: count($hosts);
 
@@ -77,7 +90,7 @@ class ParallelExecutor implements ExecutorInterface
         //
         Context::push(new Context($localhost, $this->input, $this->output));
         {
-            Storage::persist($hosts);
+            Storage::persist(...$hosts);
         }
         Context::pop();
 
@@ -86,11 +99,11 @@ class ParallelExecutor implements ExecutorInterface
             $this->informer->startTask($task);
 
             if ($task->isLocal()) {
-                Storage::load($hosts);
+                Storage::load(...$hosts);
                 {
                     $task->run(new Context($localhost, $this->input, $this->output));
                 }
-                Storage::flush($hosts);
+                Storage::flush(...$hosts);
             } else {
                 foreach (array_chunk($hosts, $limit) as $chunk) {
                     $exitCode = $this->runTask($chunk, $task);
@@ -115,19 +128,13 @@ class ParallelExecutor implements ExecutorInterface
         }
     }
 
-    /**
-     * Run task on hosts.
-     *
-     * @param Host[] $hosts
-     * @return int
-     */
     private function runTask(array $hosts, Task $task): int
     {
         $processes = [];
 
         foreach ($hosts as $host) {
             if ($task->shouldBePerformed($host)) {
-                $processes[$host->getHostname()] = $this->getProcess($host, $task);
+                $processes[$host->getAlias()] = $this->getProcess($host, $task);
                 if ($task->isOnce()) {
                     $task->setHasRun();
                 }
@@ -135,7 +142,7 @@ class ParallelExecutor implements ExecutorInterface
         }
 
         $callback = function (string $type, string $host, string $output) {
-            $output = rtrim($output);
+            $output = preg_replace('/\n$/', '', $output);
             if (strlen($output) !== 0) {
                 $this->output->writeln($output);
             }
@@ -145,6 +152,7 @@ class ParallelExecutor implements ExecutorInterface
 
         while ($this->areRunning($processes)) {
             $this->gatherOutput($processes, $callback);
+            $this->output->write(spinner() . "\r");
             usleep(1000);
         }
         $this->gatherOutput($processes, $callback);
@@ -152,31 +160,31 @@ class ParallelExecutor implements ExecutorInterface
         return $this->gatherExitCodes($processes);
     }
 
-    /**
-     * Get process for task on host.
-     */
     protected function getProcess(Host $host, Task $task): Process
     {
         $dep = PHP_BINARY . ' ' . DEPLOYER_BIN;
-        $options = $this->generateOptions();
-        $arguments = $this->generateArguments();
-        $hostname = $host->getHostname();
+        $hostAlias = $host->getAlias();
         $taskName = $task->getName();
-        $configFile = $host->get('host_config_storage');
+        $configFile = $host->get('host_config_file');
         $value = $this->input->getOption('file');
         $file = $value ? "--file='$value'" : '';
 
-        if ($this->output->isDecorated()) {
-            $options .= ' --ansi';
+        $options = '';
+        foreach ($this->config as $key => $value) {
+            if (is_scalar($value)) {
+                $options .= " -o $key=" . json_encode($value);
+            }
         }
 
-        $command = "$dep $file worker $arguments $options --hostname $hostname --task $taskName --config-file $configFile";
-        $process = new Process($command);
+        $command = "$dep $file worker --host $hostAlias --task $taskName $options --config-file $configFile";
+        if ($this->output->isDebug()) {
+            $this->output->writeln(hostTag($host->getAlias()) . $command);
+        }
 
+        $process = new Process($command);
         if (!defined('DEPLOYER_PARALLEL_PTY')) {
             $process->setPty(true);
         }
-
         return $process;
     }
 
@@ -246,41 +254,42 @@ class ParallelExecutor implements ExecutorInterface
         return 0;
     }
 
-    /**
-     * Generate options and arguments string.
-     */
-    private function generateOptions(): string
+    private function setColors(array $hosts)
     {
-        /** @var string[] $inputs */
-        $inputs = [
-            (string)(new VerbosityString($this->output)),
+        $colors = $allColors = [
+            'fg=cyan;options=bold',
+            'fg=green;options=bold',
+            'fg=yellow;options=bold',
+            'fg=cyan',
+            'fg=blue',
+            'fg=yellow',
+            'fg=magenta',
+            'fg=blue;options=bold',
+            'fg=green',
+            'fg=magenta;options=bold',
+            'fg=red;options=bold',
         ];
 
-        $userDefinition = $this->console->getUserDefinition();
-        // Get user arguments
-        foreach ($userDefinition->getArguments() as $argument) {
-            $inputs[] = Argument::toString($this->input, $argument);
+        // Set colors to all host.
+        $hostnameColors = UserConfiguration::load(UserConfiguration::HOSTNAME_COLORS, []);
+        foreach ($hosts as $host) {
+            $hostname = $host->getAlias();
+            if (array_key_exists($hostname, $hostnameColors)) {
+                $tag = $hostnameColors[$hostname];
+                $colors = array_values(array_filter($colors, function ($i) use ($tag) {
+                    return $i !== $tag;
+                }));
+            }
         }
-
-        // Get user options
-        foreach ($userDefinition->getOptions() as $option) {
-            $inputs[] = Option::toString($this->input, $option);
+        $i = 0;
+        foreach ($hosts as $host) {
+            $hostname = $host->getAlias();
+            if (!array_key_exists($hostname, $hostnameColors)) {
+                $hostnameColors[$hostname] = count($colors) > 0
+                    ? $colors[$i++ % count($colors)]
+                    : $allColors[abs(crc32($hostname)) % count($allColors)];
+            }
         }
-
-        return implode(' ', array_filter($inputs, static function (string $item): bool {
-            return $item !== '';
-        }));
-    }
-
-    private function generateArguments(): string
-    {
-        $arguments = '';
-
-        if ($this->input->hasArgument('stage')) {
-            // Some people rely on stage argument, so pass it to worker too.
-            $arguments .= $this->input->getArgument('stage');
-        }
-
-        return $arguments;
+        UserConfiguration::save(UserConfiguration::HOSTNAME_COLORS, $hostnameColors);
     }
 }

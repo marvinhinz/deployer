@@ -19,43 +19,22 @@ trait ConfigurationAccessor
         return $this->config;
     }
 
-    /**
-     * Get configuration options
-     *
-     * @param mixed $default
-     * @return mixed
-     */
     public function get(string $name, $default = null)
     {
         return $this->config->get($name, $default);
     }
 
-    /**
-     * Check configuration option
-     */
     public function has(string $name): bool
     {
         return $this->config->has($name);
     }
 
-    /**
-     * Set configuration option
-     *
-     * @param mixed $value
-     * @return static
-     */
     public function set(string $name, $value)
     {
         $this->config->set($name, $value);
         return $this;
     }
 
-    /**
-     * Add configuration option
-     *
-     * @param mixed[] $value
-     * @return static
-     */
     public function add(string $name, array $value)
     {
         $this->config->add($name, $value);
