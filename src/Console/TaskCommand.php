@@ -20,7 +20,7 @@ class TaskCommand extends Command
 {
     private $deployer;
 
-    public function __construct(string $name, string $description, Deployer $deployer)
+    public function __construct(string $name, ?string $description, Deployer $deployer)
     {
         parent::__construct($name);
         $this->setDescription($description);

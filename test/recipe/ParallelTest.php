@@ -8,7 +8,6 @@
 namespace Deployer;
 
 use Deployer\Exception\Exception;
-use Symfony\Component\Console\Output\OutputInterface;
 
 class ParallelTest extends DepCase
 {
@@ -25,10 +24,7 @@ class ParallelTest extends DepCase
     public function testDeploy()
     {
         $output = $this->start('deploy', [
-            '--parallel' => true,
             '--file' => DEPLOYER_FIXTURES . '/recipe/deploy.php'
-        ], [
-            'verbosity' => OutputInterface::VERBOSITY_DEBUG
         ]);
 
         self::assertContains('echo $0', $output, 'Missing output from worker.');
