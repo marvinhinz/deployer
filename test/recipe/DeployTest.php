@@ -17,7 +17,7 @@ class DeployTest extends DepCase
         require DEPLOYER_FIXTURES . '/recipe/deploy.php';
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         self::$currentPath = self::$tmpPath . '/localhost';
     }

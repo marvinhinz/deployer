@@ -7,8 +7,6 @@
 
 namespace Deployer;
 
-use Symfony\Component\Console\Output\OutputInterface;
-
 class ReleaseTest extends DepCase
 {
     protected function load()
@@ -16,7 +14,7 @@ class ReleaseTest extends DepCase
         require DEPLOYER_FIXTURES . '/recipe/release.php';
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         self::$currentPath = self::$tmpPath . '/localhost';
     }

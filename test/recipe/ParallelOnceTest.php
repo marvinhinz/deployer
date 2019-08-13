@@ -7,7 +7,6 @@
 
 namespace Deployer;
 
-use Deployer\Exception\Exception;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ParallelOnceTest extends DepCase
@@ -17,7 +16,7 @@ class ParallelOnceTest extends DepCase
         require DEPLOYER_FIXTURES . '/recipe/parallel.php';
     }
 
-    protected function setUp()
+    protected function setUp(): void
     {
         self::$currentPath = self::$tmpPath . '/localhost';
     }
