@@ -19,46 +19,6 @@ class HostSelectorTest extends TestCase
         $this->assertInstanceOf($classname, $hostSelector);
     }
 
-    public function testThrowExceptionIfStageOrHostnameNotFound()
-    {
-        $this->expectException(\Exception::class);
-
-        $hostSelector = new HostSelector(new HostCollection());
-        $hostSelector->getAll('ThisHostDoNotExists');
-    }
-
-    /**
-     * @dataProvider dataProviderForHostnames
-     */
-    public function testReturnArrayWithHostnameThatWasSet($hostname, $host)
-    {
-        $hostCollection = new HostCollection();
-        $hostCollection->set($hostname, $host);
-        $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getAll(null);
-
-        $this->assertSame($hostname, key($hosts));
-    }
-
-    public function dataProviderForHostnames()
-    {
-        return [
-            ['test', new Host('test')],
-            ['app-server', new Host('app-server')],
-            ['db', new Host('db')],
-            ['varnish-cache', new Host('varnish-cache')],
-            ['staging', new Host('staging')],
-        ];
-    }
-
-    public function testReturnArrayWithDefaultLocalHostForEmptyCollection()
-    {
-        $hostSelector = new HostSelector(new HostCollection());
-        $hosts = $hostSelector->getAll(null);
-
-        $this->assertSame('localhost', key($hosts));
-    }
-
     public function testReturnCorrectSizeOfHostsArray()
     {
         $hostCollection = new HostCollection();
@@ -71,40 +31,6 @@ class HostSelectorTest extends TestCase
         $hosts = $hostSelector->getAll(null);
 
         $this->assertSame(count($hosts), 100);
-    }
-
-    public function testShouldThrowExceptionIfHostNameOrStageNotFound()
-    {
-        $this->expectException(\Exception::class);
-
-        $host = new Host('app');
-        $hostCollection = new HostCollection();
-        $hostCollection->set('app', $host);
-        $hostSelector = new HostSelector($hostCollection);
-        $hostSelector->getAll('stage');
-    }
-
-    public function testShouldReturnHostIfItHasStage()
-    {
-        $host = new Host('apps');
-        $host->stage('stage');
-        $hostCollection = new HostCollection();
-        $hostCollection->set('apps', $host);
-        $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getAll('stage');
-
-        $this->assertSame(1, count($hosts));
-    }
-
-    public function testShouldReturnHostIfItHasHostnameEqualsStageName()
-    {
-        $host = new Host('apps');
-        $hostCollection = new HostCollection();
-        $hostCollection->set('apps', $host);
-        $hostSelector = new HostSelector($hostCollection);
-        $hosts = $hostSelector->getAll('apps');
-
-        $this->assertSame(1, count($hosts));
     }
 
     public function testGetByHostnameReturnsArrayWithHostsAndCorrectLength()
@@ -124,7 +50,7 @@ class HostSelectorTest extends TestCase
 
     public function testReturnEmptyArrayOfHostsUsingGetByRolesIfNoRolesDefined()
     {
-        $roles = ['server'];
+        $roles = 'server';
         $hostCollection = new HostCollection();
         $hostCollection->set('server', new Host('server'));
         $hostSelector = new HostSelector($hostCollection);
@@ -134,10 +60,10 @@ class HostSelectorTest extends TestCase
 
     public function testReturnHostsArrayUsingGetByRoles()
     {
-        $roles = "role1, role2";
-        $host = new  Host('server');
-        $host->roles("role1");
-        $host->roles("role2");
+        $roles = 'role1,role2';
+        $host = new Host('server');
+        $host->roles('role1');
+        $host->roles('role2');
         $hostCollection = new HostCollection();
         $hostCollection->set('server', $host);
         $hostSelector = new HostSelector($hostCollection);

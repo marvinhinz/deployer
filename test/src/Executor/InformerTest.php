@@ -33,23 +33,6 @@ class InformerTest extends TestCase
         $informer->endTask($task);
     }
 
-    public function testEndTask()
-    {
-        $output = $this->getMockBuilder(OutputWatcher::class)
-            ->disableOriginalConstructor()
-            ->setMethods(['writeln', 'getVerbosity', 'isDecorated'])
-            ->getMock();
-
-        $output->expects($this->once())
-            ->method('writeln')
-            ->with($this->stringStartsWith('<info>✔</info> Ok'));
-
-        $informer = new Informer($output);
-        $task = new Task('task');
-
-        $informer->endTask($task);
-    }
-
     public function testTaskError()
     {
         $output = $this->getMockBuilder(OutputWatcher::class)
