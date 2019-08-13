@@ -43,7 +43,7 @@ class Client
         if ($config['tty']) {
             $sshArguments = $sshArguments->withFlag('-tt');
             $command = escapeshellarg($command);
-            $ssh = "ssh $sshArguments $host $become $command";
+            $ssh = "ssh $sshArguments $hostname $become $command";
 
             if ($this->output->isDebug()) {
                 $this->pop->writeln(Process::OUT, $host->getAlias(), "$ssh");
@@ -66,9 +66,9 @@ class Client
         $shellCommand = $host->getShellCommand();
 
         if (strtolower(substr(PHP_OS, 0, 3)) === 'win') {
-            $ssh = "ssh $sshArguments $host $become \"$shellCommand; printf '[exit_code:%s]' $?;\"";
+            $ssh = "ssh $sshArguments $hostname $become \"$shellCommand; printf '[exit_code:%s]' $?;\"";
         } else {
-            $ssh = "ssh $sshArguments $host $become '$shellCommand; printf \"[exit_code:%s]\" $?;'";
+            $ssh = "ssh $sshArguments $hostname $become '$shellCommand; printf \"[exit_code:%s]\" $?;'";
         }
 
         if ($this->output->isDebug()) {
@@ -126,7 +126,8 @@ class Client
             if ($this->output->isDebug()) {
                 $this->pop->writeln(Process::OUT, $host->getAlias(), 'ssh multiplexing initialization');
             }
-            $output = $this->exec("ssh -N $sshArguments $host");
+            $hostname = $host->getHostname();
+            $output = $this->exec("ssh -N $sshArguments $hostname");
             if ($this->output->isDebug()) {
                 $this->pop->printBuffer(Process::OUT, $host->getAlias(), $output);
             }

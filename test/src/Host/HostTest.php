@@ -70,6 +70,7 @@ class HostTest extends TestCase
     public function testHostAlias()
     {
         $host = new Host('host/alias');
+        self::assertEquals('host/alias', "$host");
         self::assertEquals('host/alias', $host->getAlias());
         self::assertEquals('host', "$host");
     }

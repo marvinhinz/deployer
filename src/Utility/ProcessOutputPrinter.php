@@ -26,13 +26,13 @@ class ProcessOutputPrinter
     /**
      * Returns a callable for use with the symfony Process->run($callable) method.
      *
-     * @param string $hostAlias
+     * @param string $host
      * @return callable A function expecting a int $type (e.g. Process::OUT or Process::ERR) and string $buffer parameters.
      */
-    public function callback(string $hostAlias)
+    public function callback(string $host)
     {
-        return function ($type, $buffer) use ($hostAlias) {
-            $this->printBuffer($type, $hostAlias, $buffer);
+        return function ($type, $buffer) use ($host) {
+            $this->printBuffer($type, $host, $buffer);
         };
     }
 
@@ -48,18 +48,18 @@ class ProcessOutputPrinter
         }
     }
 
-    public function command(string $hostAlias, string $command)
+    public function command(string $host, string $command)
     {
-        $this->logger->log("[$hostAlias] run $command");
-        $this->output->writeln(hostTag($hostAlias) . "<fg=cyan>run</> $command");
+        $this->logger->log("[$host] run $command");
+        $this->output->writeln(hostTag($host) . "<fg=cyan>run</> $command");
     }
 
     /**
      * @param string $type Process::OUT or Process::ERR
-     * @param string $hostAlias
+     * @param string $host
      * @param string $line
      */
-    public function writeln($type, $hostAlias, $line)
+    public function writeln($type, $host, $line)
     {
         $line = $this->filterOutput($line);
 
@@ -69,12 +69,12 @@ class ProcessOutputPrinter
         }
 
         if ($type === Process::ERR) {
-            $this->logger->log("[$hostAlias] [error] $line");
+            $this->logger->log("[$host] [error] $line");
         } else {
-            $this->logger->log("[$hostAlias] $line");
+            $this->logger->log("[$host] $line");
         }
 
-        $prefix = hostTag($hostAlias);
+        $prefix = hostTag($host);
         if ($type === Process::ERR) {
             $line = "$prefix<fg=red>err</> $line";
         } else {

@@ -55,14 +55,13 @@ class Host
     }
 
     /**
-     * Returns pair user/hostname
+     * Returns host alias.
      *
      * @return string
      */
     public function __toString()
     {
-        $user = empty($this->user) ? '' : "{$this->user}@";
-        return "$user{$this->hostname}";
+        return $this->getAlias();
     }
 
     /**
@@ -79,6 +78,17 @@ class Host
     public function getHostname()
     {
         return $this->config->parse($this->hostname);
+    }
+
+    /**
+     * Returns pair user/hostname
+     *
+     * @return string
+     */
+    public function getUserHostname()
+    {
+        $user = empty($this->user) ? '' : "{$this->user}@";
+        return "$user{$this->hostname}";
     }
 
     public function hostname(string $hostname): self

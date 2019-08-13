@@ -163,7 +163,6 @@ class ParallelExecutor implements ExecutorInterface
     protected function getProcess(Host $host, Task $task): Process
     {
         $dep = PHP_BINARY . ' ' . DEPLOYER_BIN;
-        $hostAlias = $host->getAlias();
         $taskName = $task->getName();
         $configFile = $host->get('host_config_file');
         $value = $this->input->getOption('file');
@@ -176,7 +175,7 @@ class ParallelExecutor implements ExecutorInterface
             }
         }
 
-        $command = "$dep $file worker --host $hostAlias --task $taskName $options --config-file $configFile";
+        $command = "$dep $file worker --host $host --task $taskName $options --config-file $configFile";
         if ($this->output->isDebug()) {
             $this->output->writeln(hostTag($host->getAlias()) . $command);
         }
@@ -271,7 +270,7 @@ class ParallelExecutor implements ExecutorInterface
         ];
 
         // Set colors to all host.
-        $hostnameColors = UserConfiguration::load(UserConfiguration::HOSTNAME_COLORS, []);
+        $hostnameColors = UserConfiguration::load(UserConfiguration::HOST_COLORS, []);
         foreach ($hosts as $host) {
             $hostname = $host->getAlias();
             if (array_key_exists($hostname, $hostnameColors)) {
@@ -290,6 +289,6 @@ class ParallelExecutor implements ExecutorInterface
                     : $allColors[abs(crc32($hostname)) % count($allColors)];
             }
         }
-        UserConfiguration::save(UserConfiguration::HOSTNAME_COLORS, $hostnameColors);
+        UserConfiguration::save(UserConfiguration::HOST_COLORS, $hostnameColors);
     }
 }

@@ -12,10 +12,11 @@
 
 ### Fixed
 - Fixed ssh multiplexing race condition on multiple same-host connections.
-- Parameters -f or --file now are accepted also without the equal sign [#1479]
+- Parameters -f or --file now are accepted also without the equal sign. [#1479]
 
 ### Removed
 - Option `--parallel` was removed. Now all task executions are parallel.
+- Removed `argument` function.
 
 
 ## v6.5.0

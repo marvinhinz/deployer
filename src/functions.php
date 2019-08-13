@@ -8,6 +8,7 @@
 namespace Deployer;
 
 use Deployer\Configuration\UserConfiguration;
+use Deployer\Exception\Exception;
 use Deployer\Exception\RuntimeException;
 use Deployer\Host\FileLoader;
 use Deployer\Host\Host;
@@ -17,7 +18,6 @@ use Deployer\Support\Proxy;
 use Deployer\Task\Context;
 use Deployer\Task\GroupTask;
 use Deployer\Task\Task as T;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -207,23 +207,6 @@ function fail($it, $that)
 }
 
 /**
- * Add users arguments.
- *
- * Note what Deployer already has one argument: "stage".
- *
- * @param string $name
- * @param int $mode
- * @param string $description
- * @param mixed $default
- */
-function argument($name, $mode = null, $description = '', $default = null)
-{
-    Deployer::get()->getConsole()->getUserDefinition()->addArgument(
-        new InputArgument($name, $mode, $description, $default)
-    );
-}
-
-/**
  * Add users options.
  *
  * @param string $name
@@ -357,6 +340,15 @@ function testLocally($command)
 }
 
 /**
+ * @return Host
+ * @throws Exception
+ */
+function currentHost()
+{
+    return Context::get()->getHost();
+}
+
+/**
  * Iterate other hosts, allowing to call run func in callback.
  *
  * @experimental
@@ -482,28 +474,27 @@ function download($source, $destination, array $config = [])
 }
 
 /**
- * @param string $hostAlias
+ * @param string $host
  * @return string
  */
-function hostTag($hostAlias)
+function hostTag($host)
 {
     static $map = null;
     if ($map === null) {
-        $map = UserConfiguration::load(UserConfiguration::HOSTNAME_COLORS, []);
+        $map = UserConfiguration::load(UserConfiguration::HOST_COLORS, []);
     }
-    $tag = $map[$hostAlias] ?? 'fg=default';
-    return "[<{$tag}>$hostAlias</>] ";
+    $tag = $map[$host] ?? 'fg=default';
+    return "[<{$tag}>$host</>] ";
 }
 
 /**
  * Writes an info message.
  * @param string $message
- * @throws Exception\Exception
+ * @throws Exception
  */
 function writeInfo($message)
 {
-    $host = Context::get()->getHost();
-    output()->writeln(hostTag($host->getAlias()) . "<info>info</info> " . parse($message));
+    output()->writeln(hostTag(currentHost()->getAlias()) . "<info>info</info> " . parse($message));
 }
 
 /**

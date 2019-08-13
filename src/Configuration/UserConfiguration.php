@@ -11,7 +11,7 @@ use Deployer\Support\Unix;
 
 class UserConfiguration
 {
-    const HOSTNAME_COLORS = 'hostname_colors.json';
+    const HOST_COLORS = 'host_colors.json';
 
     public static function load($name, $default = null)
     {

@@ -24,19 +24,18 @@ require __DIR__ . '/deploy/cleanup.php';
 require __DIR__ . '/deploy/copy_dirs.php';
 require __DIR__ . '/deploy/rollback.php';
 
-use Deployer\Task\Context;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Facts
  */
 
-set('hostname', function () {
-    return Context::get()->getHost()->getHostname();
+set('host', function () {
+    return currentHost()->getAlias();
 });
 
-set('host_alias', function () {
-    return Context::get()->getHost()->getAlias();
+set('hostname', function () {
+    return currentHost()->getHostname();
 });
 
 set('user', function () {

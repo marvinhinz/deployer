@@ -27,6 +27,6 @@ task('deploy:info', function () {
         $what = "<fg=magenta;options=bold>HEAD</>";
     }
 
-    writeln("Deploying $what on " . hostTag(get('host_alias')));
+    writeln("Deploying $what on " . hostTag(get('host')));
 })
     ->setPrivate();

@@ -27,20 +27,17 @@
         "bin/dep"
     ],
     "require": {
-        "php": "~7.0",
-        "deployer/phar-update": "~2.1",
-        "pimple/pimple": "~3.0",
-        "symfony/console": "~2.7|~3.0|~4.0",
-        "symfony/process": "~2.7|~3.0|~4.0",
-        "symfony/yaml": "~2.7|~3.0|~4.0"
+        "php": "^7.2",
+        "deployer/phar-update": "^2.1",
+        "pimple/pimple": "^3.2",
+        "symfony/console": "^4.3",
+        "symfony/process": "^4.3",
+        "symfony/yaml": "^4.3"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.4.3"
+        "phpunit/phpunit": "^8.3"
     },
     "config": {
-        "sort-packages": true,
-        "platform": {
-            "php": "7.0.8"
-        }
+        "sort-packages": true
     }
 }
