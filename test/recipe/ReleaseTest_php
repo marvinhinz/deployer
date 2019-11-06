@@ -16,7 +16,7 @@ class ReleaseTest extends DepCase
 
     protected function setUp(): void
     {
-        self::$currentPath = self::$tmpPath . '/localhost';
+        self::$pwd = self::$tmpPath . '/localhost';
     }
 
     public function testReleaseStandard()

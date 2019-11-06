@@ -7,33 +7,32 @@
 
 namespace Deployer;
 
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 class DeployTest extends DepCase
 {
-    protected function load()
-    {
-        require DEPLOYER_FIXTURES . '/recipe/deploy.php';
-    }
-
     protected function setUp(): void
     {
-        self::$currentPath = self::$tmpPath . '/localhost';
+        self::$pwd = DEPLOYER_TMP . '/localhost';
+    }
+
+    protected function recipe()
+    {
+        return DEPLOYER_FIXTURES . '/recipe/deploy.php';
     }
 
     public function testDeploy()
     {
-        $output = $this->start('deploy', [], ['verbosity' => OutputInterface::VERBOSITY_DEBUG]);
+        $output = $this->start('deploy');
         self::assertContains('Successfully deployed!', $output);
-        self::assertDirectoryExists(self::$currentPath . '/.dep');
-        self::assertDirectoryExists(self::$currentPath . '/releases');
-        self::assertDirectoryExists(self::$currentPath . '/shared');
-        self::assertDirectoryExists(self::$currentPath . '/current');
-        self::assertFileExists(self::$currentPath . '/current/composer.json');
-        self::assertFileExists(self::$currentPath . '/shared/public/media/.gitkeep');
-        self::assertFileExists(self::$currentPath . '/shared/app/config/parameters.yml');
-        self::assertEquals(1, exec("ls -1 releases | wc -l"));
+        self::assertDirectoryExists(self::$pwd . '/.dep');
+        self::assertDirectoryExists(self::$pwd . '/releases');
+        self::assertDirectoryExists(self::$pwd . '/shared');
+        self::assertDirectoryExists(self::$pwd . '/current');
+        self::assertFileExists(self::$pwd . '/current/composer.json');
+        self::assertFileExists(self::$pwd . '/shared/public/media/.gitkeep');
+        self::assertFileExists(self::$pwd . '/shared/app/config/parameters.yml');
+        self::assertEquals(1, $this->exec("ls -1 releases | wc -l"));
     }
 
     public function testKeepReleases()
@@ -44,15 +43,15 @@ class DeployTest extends DepCase
         $this->start('deploy');
 
         $this->start('deploy');
-        exec('touch current/ok.txt');
+        $this->exec('touch current/ok.txt');
 
         $this->start('deploy');
-        exec('touch current/fail.txt');
-        self::assertEquals(5, exec("ls -1 releases | wc -l"));
+        $this->exec('touch current/fail.txt');
+        self::assertEquals(5, $this->exec("ls -1 releases | wc -l"));
 
         // Make sure what after cleanup task same amount of releases a kept.
         $this->start('cleanup');
-        self::assertEquals(5, exec("ls -1 releases | wc -l"));
+        self::assertEquals(5, $this->exec("ls -1 releases | wc -l"));
     }
 
     /**
@@ -62,9 +61,9 @@ class DeployTest extends DepCase
     {
         $this->start('rollback');
 
-        self::assertEquals(4, exec("ls -1 releases | wc -l"));
-        self::assertFileExists(self::$currentPath . '/current/ok.txt');
-        self::assertFileNotExists(self::$currentPath . '/current/fail.txt');
+        self::assertEquals(4, $this->exec("ls -1 releases | wc -l"));
+        self::assertFileExists(self::$pwd . '/current/ok.txt');
+        self::assertFileNotExists(self::$pwd . '/current/fail.txt');
     }
 
     /**
@@ -81,11 +80,11 @@ class DeployTest extends DepCase
      */
     public function testAfterFail()
     {
-        self::assertFileExists(self::$currentPath . '/current/ok.txt');
-        self::assertFileNotExists(self::$currentPath . '/.dep/deploy.lock');
+        self::assertFileExists(self::$pwd . '/current/ok.txt');
+        self::assertFileNotExists(self::$pwd . '/.dep/deploy.lock');
 
         $this->start('cleanup');
-        self::assertEquals(5, exec("ls -1 releases | wc -l"));
-        self::assertFileNotExists(self::$currentPath . '/release');
+        self::assertEquals(5, $this->exec("ls -1 releases | wc -l"));
+        self::assertFileNotExists(self::$pwd . '/release');
     }
 }

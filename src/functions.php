@@ -789,3 +789,11 @@ function locateBinaryPath($name)
 
     throw new \RuntimeException("Can't locate [$nameEscaped] - neither of [command|which|type] commands are available");
 }
+
+/**
+ * this is some
+ */
+function docs()
+{
+
+}

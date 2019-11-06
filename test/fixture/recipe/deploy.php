@@ -36,7 +36,7 @@ set('writable_dirs', [
 // Hosts
 
 localhost()
-    ->set('deploy_path', __DIR__ . '/tmp/localhost');
+    ->set('deploy_path', __DIR__ . '/../../tmp/localhost');
 
 
 // Tasks
