@@ -81,7 +81,7 @@ abstract class SelectCommand extends Command
         }
 
         if (empty($hosts)) {
-            $message = 'No host selected.';
+            $message = 'No host setestlected.';
             if (!empty($selectExpression)) {
                 $message .= " Please, check your selector:\n\n    $selectExpression";
             }
